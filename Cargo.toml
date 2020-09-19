@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 rocket = "0.4.5"
 bayespam = "1.0.3"
+serde = "1.0.116"
+rocket_contrib = "0.4.5"
