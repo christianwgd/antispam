@@ -11,6 +11,11 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 
 #[derive(Deserialize)]
+struct CheckMessage {
+    text: String,
+}
+
+#[derive(Deserialize)]
 struct Message {
     text: String,
     is_spam: bool,
@@ -22,13 +27,13 @@ struct Rating {
     score: f32,
 }
 
-#[get("/check/<message>")]
-fn check(message: String) -> Json<Rating> {
+#[post("/check", format = "json", data = "<msg>")]
+fn check(msg: Json<CheckMessage>) -> Json<Rating> {
     let mut classifier_file = File::open("model.json").unwrap();
     let classifier = Classifier::new_from_pre_trained(&mut classifier_file).unwrap();
 
-    let is_spam = classifier.identify(&message);
-    let score = classifier.score(&message);
+    let is_spam = classifier.identify(&msg.text);
+    let score = classifier.score(&msg.text);
 
     let rat = Rating {
         spam: is_spam,
