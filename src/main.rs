@@ -10,10 +10,9 @@ use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use rocket::request::FromRequest;
-use rocket::{Request, request, Response};
+use rocket::{Request, request};
 use rocket::Outcome;
 use rocket::http::Status;
-use rocket::http::route::Error;
 
 #[derive(Deserialize)]
 struct CheckMessage {
