@@ -2,7 +2,10 @@
 
 ## Introduction
 
-antispam is a web service runtime for the bayespam spam checker crate.
+antispam is a web service runtime for the bayespam spam checker crate. There are two services available:
+
+- Check: Gets a text to check and returns if it's classified as spam. The score of the text is also returned
+- Train: Learn a text to the bayespam file as either spam or ham.
 
 ## Installation
 
