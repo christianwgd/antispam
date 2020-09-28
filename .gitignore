@@ -1,3 +1,5 @@
 /target
 /.idea
 model.json
+config.json
+Rocket.toml
