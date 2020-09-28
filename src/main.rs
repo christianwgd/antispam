@@ -3,9 +3,11 @@
 #[macro_use]
 extern crate rocket;
 extern crate bayespam;
+extern crate clap;
 extern crate serde;
 
 use bayespam::classifier::Classifier;
+use clap::{crate_authors, App, Arg};
 use rocket::http::Status;
 use rocket::request::FromRequest;
 use rocket::Outcome;
@@ -13,7 +15,9 @@ use rocket::{request, Request, State};
 use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::error::Error;
 use std::fs::File;
+use std::io::Read;
 
 #[derive(Deserialize)]
 struct CheckMessage {
@@ -94,11 +98,29 @@ fn train(_key: ApiKey, msg: Json<Message>) {
     classifier.save(&mut file, false).unwrap();
 }
 
-fn main() {
-    let clients: Value = serde_json::from_str(include_str!("../config.json")).unwrap();
+fn main() -> Result<(), Box<dyn Error>> {
+    let matches = App::new("antispam")
+        .version("1.0")
+        .author(crate_authors!())
+        .about("Antispam is a web service runtime for the bayespam spam checker crate.")
+        .arg(Arg::new("config")
+            .required(true)
+            .short('c')
+            .long("config")
+            .value_name("CONFIG_FILE")
+            .about("Sets a custom config file in json format containing agents and their api-keys as key-value pairs.")
+            .takes_value(true))
+        .get_matches();
+
+    let mut conf_file = File::open(matches.value_of("config").unwrap())?;
+    let mut config = String::new();
+    conf_file.read_to_string(&mut config)?;
+    let clients: Value = serde_json::from_str(&config)?;
 
     rocket::ignite()
         .mount("/", routes![check, train])
         .manage(clients)
         .launch();
+
+    Ok(())
 }
