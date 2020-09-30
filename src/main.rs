@@ -18,6 +18,7 @@ use serde_json::Value;
 use std::error::Error;
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 
 #[derive(Deserialize)]
 struct CheckMessage {
@@ -68,8 +69,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for ApiKey {
 }
 
 #[post("/check", format = "json", data = "<msg>")]
-fn check(_key: ApiKey, msg: Json<CheckMessage>) -> Json<Rating> {
-    let mut classifier_file = File::open("model.json").unwrap();
+fn check(_key: ApiKey, msg: Json<CheckMessage>, model_file: State<String>) -> Json<Rating> {
+    let mut classifier_file = File::open(&model_file.inner()).unwrap();
     let classifier = Classifier::new_from_pre_trained(&mut classifier_file).unwrap();
 
     let is_spam = classifier.identify(&msg.text);
@@ -84,8 +85,8 @@ fn check(_key: ApiKey, msg: Json<CheckMessage>) -> Json<Rating> {
 }
 
 #[post("/train", format = "json", data = "<msg>")]
-fn train(_key: ApiKey, msg: Json<Message>) {
-    let mut classifier_file = File::open("model.json").unwrap();
+fn train(_key: ApiKey, msg: Json<Message>, model_file: State<String>) {
+    let mut classifier_file = File::open(&model_file.inner()).unwrap();
     let mut classifier = Classifier::new_from_pre_trained(&mut classifier_file).unwrap();
 
     if msg.is_spam {
@@ -110,6 +111,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             .value_name("CONFIG_FILE")
             .about("Sets a custom config file in json format containing agents and their api-keys as key-value pairs.")
             .takes_value(true))
+        .arg(Arg::new("model")
+            .required(true)
+            .short('m')
+            .long("model")
+            .value_name("MODEL_FILE")
+            .about("Model file.")
+            .takes_value(true))
         .get_matches();
 
     let mut conf_file = File::open(matches.value_of("config").unwrap())?;
@@ -117,9 +125,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     conf_file.read_to_string(&mut config)?;
     let clients: Value = serde_json::from_str(&config)?;
 
+    let model = matches.value_of("model").unwrap().to_owned();
+    if !Path::new(&model).exists() {
+        let mut classifier_file = File::create(&model).unwrap();
+        let classifier = Classifier::new();
+        classifier.save(&mut classifier_file, false)?;
+    }
+
     rocket::ignite()
         .mount("/", routes![check, train])
         .manage(clients)
+        .manage(model)
         .launch();
 
     Ok(())
