@@ -116,7 +116,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .short('m')
             .long("model")
             .value_name("MODEL_FILE")
-            .about("Model file.")
+            .about("Sets the model file for the bayes values. Model file is created if it doesn't exist.")
             .takes_value(true))
         .get_matches();
 
