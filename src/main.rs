@@ -110,23 +110,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .short('c')
             .long("config")
             .value_name("CONFIG_FILE")
-            .long_help("Sets a custom config file in json format containing agents and their api-keys as key-value pairs.")
-            .takes_value(true))
+            .long_help("Sets a custom config file in json format containing agents and their api-keys as key-value pairs."))
         .arg(Arg::new("model")
             .required(true)
             .short('m')
             .long("model")
             .value_name("MODEL_FILE")
-            .long_help("Sets the model file for the bayes values. Model file is created if it doesn't exist.")
-            .takes_value(true))
+            .long_help("Sets the model file for the bayes values. Model file is created if it doesn't exist."))
         .get_matches();
 
-    let mut conf_file = File::open(matches.value_of("config").unwrap())?;
+    let mut conf_file = File::open(matches.get_one::<String>("config").unwrap())?;
     let mut config = String::new();
     conf_file.read_to_string(&mut config)?;
     let clients: Value = serde_json::from_str(&config)?;
 
-    let model = matches.value_of("model").unwrap().to_owned();
+    let model = matches.get_one::<String>("model").unwrap().to_owned();
     if !Path::new(&model).exists() {
         let mut classifier_file = File::create(&model).unwrap();
         let classifier = Classifier::new();
